@@ -43,6 +43,9 @@ exit_with_usage() {
 build_config() {
     bash-tpl <<EOF
 {
+  "log": {
+    "logLevel": "<% \$LOG_LEVEL %>"
+  },
   "inbounds": [
     {
       "listen": "<% \$LISTEN_ADDRESS %>",
@@ -76,9 +79,17 @@ build_config() {
         "concurrency": 3
       }
     }
-],
-  "log": {
-    "logLevel": "<% \$LOG_LEVEL %>"
+  ],
+  "routing": {
+    "rules": [
+      %# BitTorrent traffic can lead to server bans, so it is better to block it.
+      {
+        "type": "field",
+        "protocol": ["bittorrent"],
+        "outboundTag": "block"
+      }
+      %# For traffic that does not match any routing rules, the first outbound rule is used by default.
+    ]
   },
   "outbounds": [
     {
@@ -90,17 +101,7 @@ build_config() {
       "settings": {},
       "tag": "block"
     }
-  ],
-  "routing": {
-    "rules": [
-      %# BitTorrent traffic can lead to server bans, so it is better to not handle it.
-      {
-        "type": "field",
-        "protocol": ["bittorrent"],
-        "outboundTag": "block"
-      }
-    ]
-  }
+  ]
 }
 EOF
 }
