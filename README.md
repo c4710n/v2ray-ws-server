@@ -21,3 +21,7 @@ Options:
 This project is designed to work in conjunction with NixOS in order to avoid exposing
 sensitive information(like UUID) to the Nix store.
 ```
+
+## License
+
+MIT
