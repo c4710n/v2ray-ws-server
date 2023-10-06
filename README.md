@@ -1,5 +1,7 @@
 # v2ray-ws-server
 
+![Nix flakes](https://img.shields.io/badge/Nix%20flakes-5277C3?logo=nixos&logoColor=white&style=flat-square)
+
 ```console
 Usage: v2ray-ws-server [OPTIONS] <UUID file>
 Run a WebSocket server of V2ray.
