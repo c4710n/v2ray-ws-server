@@ -189,7 +189,7 @@ while [[ $# -gt 0 ]]; do
             UUID_FILE="$1"
 
             while IFS= read -r line; do
-                # ignore command line prefixed by #
+                # ignore comment line prefixed by #
                 [[ "$line" =~ ^#.*$ ]] && continue
 
                 # ignore empty line
