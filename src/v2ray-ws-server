@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+
+# Defaults
+DEBUG=
+LISTEN_ADDRESS=0.0.0.0
+LISTEN_PORT=7000
+WS_PATH=/v2ray
+LOG_LEVEL=info
+UUID_FILE=
+UUIDS=()
+
+usage() {
+    cat <<EOF
+
+Usage: v2ray-ws-server [OPTIONS] <UUID file>
+Run a WebSocket server of V2ray.
+
+Options:
+  -h, --help                      Print usage
+  -l, --listen-address <address>  Specify the address to listen (default: 0.0.0.0)
+  -p, --listen-port <port>        Specify the port to listen (default: 7000)
+  --ws-path <path>                Specify the path of WebSocket (default: /v2ray)
+  --log-level                     Specify the log level (default: info)
+  --debug                         Debug the interval variables and built config
+
+<UUID file> is a plain file containing UUIDs separated by newline characters. For example:
+
+    83c11ba2-09a8-5335-2aa0-15c58d0e30dc
+    395188d5-dbbb-3ce7-e7dc-c887562616fc
+    0aaae132-5fec-24c2-873b-688dfbbf94d0
+
+This project is designed to work in conjunction with NixOS in order to avoid exposing
+sensitive information(like UUID) to the Nix store.
+
+EOF
+}
+
+exit_with_usage() {
+    usage
+    exit 1
+}
+
+build_config() {
+    bash-tpl <<EOF
+{
+  "inbounds": [
+    {
+      "listen": "<% \$LISTEN_ADDRESS %>",
+      "port": <% \$LISTEN_PORT %>,
+      "protocol": "vmess",
+      "settings": {
+        "clients": [
+          % for i in "\${!UUIDS[@]}"; do
+            {
+              "id": "<% \${UUIDS[\$i]} %>",
+              "alterId": 0,
+              "security": "auto"
+            %
+              if [[ \$i == \$((\${#UUIDS[@]} - 1)) ]]; then
+                % }
+              else
+                % },
+              fi
+            %
+          % done
+        ],
+        "disableInsecureEncryption": true
+    },
+      "streamSettings": {
+        "network": "ws",
+        "wsSettings": { "path": "<% \$WS_PATH %>" }
+      },
+      "allocate": {
+        "strategy": "always",
+        "refresh": 5,
+        "concurrency": 3
+      }
+    }
+],
+  "log": {
+    "logLevel": "<% \$LOG_LEVEL %>"
+  },
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "settings": {}
+    },
+    {
+      "protocol": "blackhole",
+      "settings": {},
+      "tag": "block"
+    }
+  ],
+  "routing": {
+    "rules": [
+      {
+        "type": "field",
+        "protocol": ["bittorrent"],
+        "outboundTag": "block"
+      }
+    ]
+  }
+}
+EOF
+}
+
+debug_variables() {
+    echo "Internal Variables:"
+    echo
+    echo "    LISTEN_ADDRESS=$LISTEN_ADDRESS"
+    echo "    LISTEN_PORT=$LISTEN_PORT"
+    echo "    WS_PATH=$WS_PATH"
+    echo "    LOG_LEVEL=$LOG_LEVEL"
+    echo "    UUID_FILE=$UUID_FILE"
+    echo "    UUIDS=("
+    for u in "${UUIDS[@]}"; do
+        echo "      $u"
+    done
+    echo "    )"
+    echo
+}
+
+debug_config() {
+    echo "Built Config:"
+    echo
+    # shellcheck disable=SC1090
+    source <(build_config)
+    echo
+}
+
+main() {
+    if [[ -n $DEBUG ]]; then
+        debug_variables
+        echo
+        debug_config
+    fi
+
+    # shellcheck disable=SC1090
+    source <(build_config) | v2ray run
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        -l | --listen-address)
+            LISTEN_ADDRESS=$2
+            shift 2
+            ;;
+        -p | --listen-port)
+            LISTEN_PORT=$2
+            shift 2
+            ;;
+        --ws-path)
+            WS_PATH=$2
+            shift 2
+            ;;
+        --log-level)
+            LOG_LEVEL=$2
+            shift 2
+            ;;
+        --debug)
+            DEBUG=true
+            shift
+            ;;
+        -*)
+            echo "Unknown option: $1"
+            exit_with_usage
+            ;;
+        *)
+            if [[ -n "$UUID_FILE" ]]; then
+                echo "UUID file can be only specified once"
+                exit_with_usage
+            fi
+
+            UUID_FILE="$1"
+
+            while IFS= read -r line; do
+                # Add each line to the array
+                UUIDS+=("$line")
+            done < "$UUID_FILE"
+
+            shift
+            ;;
+    esac
+done
+
+# check required arguments
+if [[ -z "$UUID_FILE" ]]; then
+    echo "<UUID file> is missing"
+    exit_with_usage
+fi
+
+main
