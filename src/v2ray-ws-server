@@ -93,6 +93,7 @@ build_config() {
   ],
   "routing": {
     "rules": [
+      %# BitTorrent traffic can lead to server bans, so it is better to not handle it.
       {
         "type": "field",
         "protocol": ["bittorrent"],
