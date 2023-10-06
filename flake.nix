@@ -9,15 +9,18 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+
         bash-tpl = import ./deps/bash-tpl.nix pkgs;
+        deps = [ bash-tpl pkgs.v2ray ];
+
+        devShell = pkgs.mkShell { buildInputs = deps; };
+        package = import ./nix/v2ray-ws-server.nix { inherit pkgs deps; };
       in
       {
-        devShells.default = with pkgs; mkShell {
-          buildInputs = [
-            bash-tpl
-            v2ray
-          ];
-        };
+        devShells.default = devShell;
+
+        packages.default = package;
+        packages.v2ray-ws-server = package;
       }
     );
 }
