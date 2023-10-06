@@ -1,7 +1,7 @@
-{ pkgs, deps }:
+{ pkgs, bash-tpl, ... }:
 
 let
-  inherit (pkgs) lib stdenv makeWrapper;
+  inherit (pkgs) lib stdenv makeWrapper v2ray;
 
   pname = "v2ray-ws-server";
   version = "1.0.2";
@@ -20,7 +20,7 @@ stdenv.mkDerivation {
       --replace "/usr/bin/env bash" "${stdenv.shell}"
 
     wrapProgram "$out/bin/v2ray-ws-server" \
-      --prefix PATH : ${lib.makeBinPath deps}
+      --prefix PATH : ${lib.makeBinPath [bash-tpl v2ray]}
   '';
 
   meta = with lib; {

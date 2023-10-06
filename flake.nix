@@ -10,17 +10,21 @@
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
-        bash-tpl = import ./deps/bash-tpl.nix pkgs;
-        deps = [ bash-tpl pkgs.v2ray ];
+        bash-tpl = pkgs.callPackage ./pkgs/bash-tpl.nix { };
+        v2ray-ws-server = pkgs.callPackage ./pkgs/v2ray-ws-server.nix { inherit bash-tpl; };
 
-        devShell = pkgs.mkShell { buildInputs = deps; };
-        package = import ./nix/v2ray-ws-server.nix { inherit pkgs deps; };
+        devShell = pkgs.mkShell { buildInputs = [ bash-tpl pkgs.v2ray ]; };
       in
       {
         devShells.default = devShell;
 
-        packages.default = package;
-        packages.v2ray-ws-server = package;
+        packages.default = v2ray-ws-server;
+        packages.v2ray-ws-server = v2ray-ws-server;
+
+        overlays.default = final: prev: rec {
+          bash-tpl = prev.callPackage ./pkgs/bash-tpl.nix { };
+          v2ray-ws-server = prev.callPackage ./pkgs/v2ray-ws-server.nix { inherit bash-tpl; };
+        };
       }
     );
 }
