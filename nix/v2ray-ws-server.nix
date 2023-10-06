@@ -4,7 +4,7 @@ let
   inherit (pkgs) lib stdenv makeWrapper;
 
   pname = "v2ray-ws-server";
-  version = "1.0.0";
+  version = "1.0.1";
 in
 stdenv.mkDerivation {
   inherit pname version;
