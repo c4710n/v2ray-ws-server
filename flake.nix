@@ -9,10 +9,14 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        bash-tpl = import ./deps/bash-tpl.nix pkgs;
       in
       {
         devShells.default = with pkgs; mkShell {
-          buildInputs = [ ];
+          buildInputs = [
+            bash-tpl
+            v2ray
+          ];
         };
       }
     );
