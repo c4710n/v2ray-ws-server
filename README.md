@@ -1,6 +1,6 @@
 # v2ray-ws-server
 
-![Nix flakes](https://img.shields.io/badge/Nix%20flakes-5277C3?logo=nixos&logoColor=white&style=flat-square)
+[![built with nix](https://builtwithnix.org/badge.svg)](https://builtwithnix.org)
 
 ```console
 Usage: v2ray-ws-server [OPTIONS] <UUID file>
