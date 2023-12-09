@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 set -e
+set -u
+set -o pipefail
 
 # Defaults
 DEBUG=
@@ -147,7 +149,7 @@ main() {
 
     # shellcheck disable=SC1090
     config=$(source <(build_config))
-    exec v2ray run <<<"${config}"
+    exec v2ray run -c <(echo "$config")
 }
 
 while [[ $# -gt 0 ]]; do
